@@ -42,7 +42,7 @@ def score(
     baseline_path=None,
     no_punc=True,
     sources=None,
-    chunk_overlap=0.5
+    chunk_overlap=0.5,
 ):
     """
     BERTScore metric.
@@ -75,13 +75,15 @@ def score(
     Return:
         - :param: `(P, R, F)`: each is of shape (N); N = number of input
                   candidate reference pairs. if returning hashcode, the
-                  output will be ((P, R, F), hashcode). If a candidate have 
-                  multiple references, the returned score of this candidate is 
+                  output will be ((P, R, F), hashcode). If a candidate have
+                  multiple references, the returned score of this candidate is
                   the *best* score among all references.
     """
     assert len(cands) == len(refs), "Different number of candidates and references"
 
-    assert lang is not None or model_type is not None, "Either lang or model_type should be specified"
+    assert (
+        lang is not None or model_type is not None
+    ), "Either lang or model_type should be specified"
 
     ref_group_boundaries = None
     if not isinstance(refs[0], str):
@@ -106,6 +108,16 @@ def score(
 
     if model_type.startswith("scibert"):
         tokenizer = AutoTokenizer.from_pretrained(cache_scibert(model_type))
+    elif "bigcode" in model_type:
+        _MASK_TOKEN = "<mask>"
+        _SEPARATOR_TOKEN = "<sep>"
+        _PAD_TOKEN = "<pad>"
+        _CLS_TOKEN = "<cls>"
+        tokenizer = AutoTokenizer.from_pretrained(model_type, use_auth_token=True)
+        tokenizer.add_special_tokens({"pad_token": _PAD_TOKEN})
+        tokenizer.add_special_tokens({"sep_token": _SEPARATOR_TOKEN})
+        tokenizer.add_special_tokens({"cls_token": _CLS_TOKEN})
+        tokenizer.add_special_tokens({"mask_token": _MASK_TOKEN})
     else:
         tokenizer = AutoTokenizer.from_pretrained(model_type)
 
@@ -146,7 +158,7 @@ def score(
         all_layers=all_layers,
         no_punc=no_punc,
         sources=sources,
-        chunk_overlap=chunk_overlap
+        chunk_overlap=chunk_overlap,
     ).cpu()
 
     if ref_group_boundaries is not None:
@@ -158,33 +170,67 @@ def score(
     use_custom_baseline = baseline_path is not None
     if rescale_with_baseline:
         if baseline_path is None:
-            baseline_path = os.path.join(os.path.dirname(__file__), f"rescale_baseline/{lang}/{model_type}.tsv")
+            baseline_path = os.path.join(
+                os.path.dirname(__file__), f"rescale_baseline/{lang}/{model_type}.tsv"
+            )
         if os.path.isfile(baseline_path):
             if not all_layers:
-                baselines = torch.from_numpy(pd.read_csv(baseline_path).iloc[num_layers].to_numpy())[1:].float()
+                baselines = torch.from_numpy(
+                    pd.read_csv(baseline_path).iloc[num_layers].to_numpy()
+                )[1:].float()
             else:
-                baselines = torch.from_numpy(pd.read_csv(baseline_path).to_numpy())[:, 1:].unsqueeze(1).float()
+                baselines = (
+                    torch.from_numpy(pd.read_csv(baseline_path).to_numpy())[:, 1:]
+                    .unsqueeze(1)
+                    .float()
+                )
 
             all_preds = (all_preds - baselines) / (1 - baselines)
         else:
-            print(f"Warning: Baseline not Found for {model_type} on {lang} at {baseline_path}", file=sys.stderr)
+            print(
+                f"Warning: Baseline not Found for {model_type} on {lang} at {baseline_path}",
+                file=sys.stderr,
+            )
 
-    out = all_preds[..., 0], all_preds[..., 1], all_preds[..., 2], all_preds[..., 3]  # P, R, F, F3
+    out = (
+        all_preds[..., 0],
+        all_preds[..., 1],
+        all_preds[..., 2],
+        all_preds[..., 3],
+    )  # P, R, F, F3
 
     if verbose:
         time_diff = time.perf_counter() - start
-        print(f"done in {time_diff:.2f} seconds, {len(refs) / time_diff:.2f} sentences/sec")
+        print(
+            f"done in {time_diff:.2f} seconds, {len(refs) / time_diff:.2f} sentences/sec"
+        )
 
     if return_hash:
-        return tuple([out, get_hash(model_type, num_layers, idf, rescale_with_baseline,
-                                    use_custom_baseline=use_custom_baseline)])
+        return tuple(
+            [
+                out,
+                get_hash(
+                    model_type,
+                    num_layers,
+                    idf,
+                    rescale_with_baseline,
+                    use_custom_baseline=use_custom_baseline,
+                ),
+            ]
+        )
 
     return out
 
 
 def plot_example(
-    candidate, reference, model_type=None, num_layers=None, lang=None, rescale_with_baseline=False,
-    baseline_path=None, fname="",
+    candidate,
+    reference,
+    model_type=None,
+    num_layers=None,
+    lang=None,
+    rescale_with_baseline=False,
+    baseline_path=None,
+    fname="",
 ):
     """
     BERTScore metric.
@@ -207,7 +253,9 @@ def plot_example(
     assert isinstance(candidate, str)
     assert isinstance(reference, str)
 
-    assert lang is not None or model_type is not None, "Either lang or model_type should be specified"
+    assert (
+        lang is not None or model_type is not None
+    ), "Either lang or model_type should be specified"
 
     if rescale_with_baseline:
         assert lang is not None, "Need to specify Language when rescaling with baseline"
@@ -249,15 +297,23 @@ def plot_example(
 
     if rescale_with_baseline:
         if baseline_path is None:
-            baseline_path = os.path.join(os.path.dirname(__file__), f"rescale_baseline/{lang}/{model_type}.tsv")
+            baseline_path = os.path.join(
+                os.path.dirname(__file__), f"rescale_baseline/{lang}/{model_type}.tsv"
+            )
         if os.path.isfile(baseline_path):
-            baselines = torch.from_numpy(pd.read_csv(baseline_path).iloc[num_layers].to_numpy())[1:].float()
+            baselines = torch.from_numpy(
+                pd.read_csv(baseline_path).iloc[num_layers].to_numpy()
+            )[1:].float()
             sim = (sim - baselines[2].item()) / (1 - baselines[2].item())
         else:
-            print(f"Warning: Baseline not Found for {model_type} on {lang} at {baseline_path}", file=sys.stderr)
+            print(
+                f"Warning: Baseline not Found for {model_type} on {lang} at {baseline_path}",
+                file=sys.stderr,
+            )
 
     import matplotlib.pyplot as plt
     from mpl_toolkits.axes_grid1 import make_axes_locatable
+
     fig, ax = plt.subplots(figsize=(len(r_tokens), len(h_tokens)))
     im = ax.imshow(sim, cmap="Blues", vmin=0, vmax=1)
 

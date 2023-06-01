@@ -13,6 +13,7 @@ from distutils.version import LooseVersion
 from transformers import BertConfig, XLNetConfig, XLMConfig, RobertaConfig
 from transformers import AutoModel, GPT2Tokenizer
 from transformers import logging
+
 logging.set_verbosity_error()
 
 from . import __version__
@@ -30,7 +31,8 @@ SCIBERT_URL_DICT = {
 
 
 lang2model = defaultdict(lambda: "microsoft/codebert-base-mlm")
-lang2model.update({
+lang2model.update(
+    {
         "python": "neulab/codebert-python",
         "javascript": "neulab/codebert-javascript",
         "js": "neulab/codebert-javascript",
@@ -38,80 +40,85 @@ lang2model.update({
         "cpp": "neulab/codebert-cpp",
         "c++": "neulab/codebert-cpp",
         "java": "neulab/codebert-java",
-})
+    }
+)
 
 model2layers = defaultdict(lambda: 10)
-model2layers.update({
-    "microsoft/codebert-base-mlm": 10,
-    "neulab/codebert-python": 11,
-    "neulab/codebert-javascript": 10,
-    "neulab/codebert-c": 10,
-    "neulab/codebert-cpp": 10,
-    "neulab/codebert-java": 7,
-    # "codebert_c_100k_base": 10,
-    # "bert-base-uncased": 9,  # 0.6925188074454226
-    # "bert-large-uncased": 18,  # 0.7210358126642836
-    # "bert-base-cased-finetuned-mrpc": 9,  # 0.6721947475618048
-    # "bert-base-multilingual-cased": 9,  # 0.6680687802637132
-    # "bert-base-chinese": 8,
-    # "roberta-base": 10,  # 0.706288719158983
-    # "roberta-large": 17,  # 0.7385974720781534
-    # "roberta-large-mnli": 19,  # 0.7535618640417984
-    # "roberta-base-openai-detector": 7,  # 0.7048158349432633
-    # "roberta-large-openai-detector": 15,  # 0.7462770207355116
-    # "xlnet-base-cased": 5,  # 0.6630103662114238
-    # "xlnet-large-cased": 7,  # 0.6598800720297179
-    # "xlm-mlm-en-2048": 6,  # 0.651262570131464
-    # "xlm-mlm-100-1280": 10,  # 0.6475166424401905
-    # "scibert-scivocab-uncased": 8,  # 0.6590354319927313
-    # "scibert-scivocab-cased": 9,  # 0.6536375053937445
-    # "scibert-basevocab-uncased": 9,  # 0.6748944832703548
-    # "scibert-basevocab-cased": 9,  # 0.6524624150542374
-    # "distilroberta-base": 5,  # 0.6797558139322964
-    # "distilbert-base-uncased": 5,  # 0.6756659152782033
-    # "distilbert-base-uncased-distilled-squad": 4,  # 0.6718318036382493
-    # "distilbert-base-multilingual-cased": 5,  # 0.6178131050889238
-    # "albert-base-v1": 10,  # 0.654237567249745
-    # "albert-large-v1": 17,  # 0.6755890754323239
-    # "albert-xlarge-v1": 16,  # 0.7031844211905911
-    # "albert-xxlarge-v1": 8,  # 0.7508642218461096
-    # "albert-base-v2": 9,  # 0.6682455591837927
-    # "albert-large-v2": 14,  # 0.7008537594374035
-    # "albert-xlarge-v2": 13,  # 0.7317228357869254
-    # "albert-xxlarge-v2": 8,  # 0.7505160257184014
-    # "xlm-roberta-base": 9,  # 0.6506799445871697
-    # "xlm-roberta-large": 17,  # 0.6941551437476826
-    # "google/electra-small-generator": 9,  # 0.6659421842117754
-    # "google/electra-small-discriminator": 11,  # 0.6534639151385759
-    # "google/electra-base-generator": 10,  # 0.6730033453857188
-    # "google/electra-base-discriminator": 9,  # 0.7032089590812965
-    # "google/electra-large-generator": 18,  # 0.6813370013104459
-    # "google/electra-large-discriminator": 14,  # 0.6896675824733477
-    # "google/bert_uncased_L-2_H-128_A-2": 1,  # 0.5887998733228855
-    # "google/bert_uncased_L-2_H-256_A-4": 1,  # 0.6114863547661203
-    # "google/bert_uncased_L-2_H-512_A-8": 1,  # 0.6177345529192847
-    # "google/bert_uncased_L-2_H-768_A-12": 2,  # 0.6191261237956839
-    # "google/bert_uncased_L-4_H-128_A-2": 3,  # 0.6076202863798991
-    # "google/bert_uncased_L-4_H-256_A-4": 3,  # 0.6205239036810148
-    # "google/bert_uncased_L-4_H-512_A-8": 3,  # 0.6375351621856903
-    # "google/bert_uncased_L-4_H-768_A-12": 3,  # 0.6561849979644787
-    # "google/bert_uncased_L-6_H-128_A-2": 5,  # 0.6200458425360283
-    # "google/bert_uncased_L-6_H-256_A-4": 5,  # 0.6277501629539081
-    # "google/bert_uncased_L-6_H-512_A-8": 5,  # 0.641952305130849
-    # "google/bert_uncased_L-6_H-768_A-12": 5,  # 0.6762186226247106
-    # "google/bert_uncased_L-8_H-128_A-2": 7,  # 0.6186876506711779
-    # "google/bert_uncased_L-8_H-256_A-4": 7,  # 0.6447993208267708
-    # "google/bert_uncased_L-8_H-512_A-8": 6,  # 0.6489729408169956
-    # "google/bert_uncased_L-8_H-768_A-12": 7,  # 0.6705203359541737
-    # "google/bert_uncased_L-10_H-128_A-2": 8,  # 0.6126762064125278
-    # "google/bert_uncased_L-10_H-256_A-4": 8,  # 0.6376350032576573
-    # "google/bert_uncased_L-10_H-512_A-8": 9,  # 0.6579006292799915
-    # "google/bert_uncased_L-10_H-768_A-12": 8,  # 0.6861146692220176
-    # "google/bert_uncased_L-12_H-128_A-2": 10,  # 0.6184105693383591
-    # "google/bert_uncased_L-12_H-256_A-4": 11,  # 0.6374004994430261
-    # "google/bert_uncased_L-12_H-512_A-8": 10,  # 0.65880012149526
-    # "google/bert_uncased_L-12_H-768_A-12": 9,  # 0.675911357700092
-})
+model2layers.update(
+    {
+        "microsoft/codebert-base-mlm": 10,
+        "neulab/codebert-python": 11,
+        "neulab/codebert-javascript": 10,
+        "neulab/codebert-c": 10,
+        "neulab/codebert-cpp": 10,
+        "neulab/codebert-java": 7,
+        "bigcode/starencoder": 10,
+        "microsoft/codebert-base": 10,
+        # "codebert_c_100k_base": 10,
+        # "bert-base-uncased": 9,  # 0.6925188074454226
+        # "bert-large-uncased": 18,  # 0.7210358126642836
+        # "bert-base-cased-finetuned-mrpc": 9,  # 0.6721947475618048
+        # "bert-base-multilingual-cased": 9,  # 0.6680687802637132
+        # "bert-base-chinese": 8,
+        # "roberta-base": 10,  # 0.706288719158983
+        # "roberta-large": 17,  # 0.7385974720781534
+        # "roberta-large-mnli": 19,  # 0.7535618640417984
+        # "roberta-base-openai-detector": 7,  # 0.7048158349432633
+        # "roberta-large-openai-detector": 15,  # 0.7462770207355116
+        # "xlnet-base-cased": 5,  # 0.6630103662114238
+        # "xlnet-large-cased": 7,  # 0.6598800720297179
+        # "xlm-mlm-en-2048": 6,  # 0.651262570131464
+        # "xlm-mlm-100-1280": 10,  # 0.6475166424401905
+        # "scibert-scivocab-uncased": 8,  # 0.6590354319927313
+        # "scibert-scivocab-cased": 9,  # 0.6536375053937445
+        # "scibert-basevocab-uncased": 9,  # 0.6748944832703548
+        # "scibert-basevocab-cased": 9,  # 0.6524624150542374
+        # "distilroberta-base": 5,  # 0.6797558139322964
+        # "distilbert-base-uncased": 5,  # 0.6756659152782033
+        # "distilbert-base-uncased-distilled-squad": 4,  # 0.6718318036382493
+        # "distilbert-base-multilingual-cased": 5,  # 0.6178131050889238
+        # "albert-base-v1": 10,  # 0.654237567249745
+        # "albert-large-v1": 17,  # 0.6755890754323239
+        # "albert-xlarge-v1": 16,  # 0.7031844211905911
+        # "albert-xxlarge-v1": 8,  # 0.7508642218461096
+        # "albert-base-v2": 9,  # 0.6682455591837927
+        # "albert-large-v2": 14,  # 0.7008537594374035
+        # "albert-xlarge-v2": 13,  # 0.7317228357869254
+        # "albert-xxlarge-v2": 8,  # 0.7505160257184014
+        # "xlm-roberta-base": 9,  # 0.6506799445871697
+        # "xlm-roberta-large": 17,  # 0.6941551437476826
+        # "google/electra-small-generator": 9,  # 0.6659421842117754
+        # "google/electra-small-discriminator": 11,  # 0.6534639151385759
+        # "google/electra-base-generator": 10,  # 0.6730033453857188
+        # "google/electra-base-discriminator": 9,  # 0.7032089590812965
+        # "google/electra-large-generator": 18,  # 0.6813370013104459
+        # "google/electra-large-discriminator": 14,  # 0.6896675824733477
+        # "google/bert_uncased_L-2_H-128_A-2": 1,  # 0.5887998733228855
+        # "google/bert_uncased_L-2_H-256_A-4": 1,  # 0.6114863547661203
+        # "google/bert_uncased_L-2_H-512_A-8": 1,  # 0.6177345529192847
+        # "google/bert_uncased_L-2_H-768_A-12": 2,  # 0.6191261237956839
+        # "google/bert_uncased_L-4_H-128_A-2": 3,  # 0.6076202863798991
+        # "google/bert_uncased_L-4_H-256_A-4": 3,  # 0.6205239036810148
+        # "google/bert_uncased_L-4_H-512_A-8": 3,  # 0.6375351621856903
+        # "google/bert_uncased_L-4_H-768_A-12": 3,  # 0.6561849979644787
+        # "google/bert_uncased_L-6_H-128_A-2": 5,  # 0.6200458425360283
+        # "google/bert_uncased_L-6_H-256_A-4": 5,  # 0.6277501629539081
+        # "google/bert_uncased_L-6_H-512_A-8": 5,  # 0.641952305130849
+        # "google/bert_uncased_L-6_H-768_A-12": 5,  # 0.6762186226247106
+        # "google/bert_uncased_L-8_H-128_A-2": 7,  # 0.6186876506711779
+        # "google/bert_uncased_L-8_H-256_A-4": 7,  # 0.6447993208267708
+        # "google/bert_uncased_L-8_H-512_A-8": 6,  # 0.6489729408169956
+        # "google/bert_uncased_L-8_H-768_A-12": 7,  # 0.6705203359541737
+        # "google/bert_uncased_L-10_H-128_A-2": 8,  # 0.6126762064125278
+        # "google/bert_uncased_L-10_H-256_A-4": 8,  # 0.6376350032576573
+        # "google/bert_uncased_L-10_H-512_A-8": 9,  # 0.6579006292799915
+        # "google/bert_uncased_L-10_H-768_A-12": 8,  # 0.6861146692220176
+        # "google/bert_uncased_L-12_H-128_A-2": 10,  # 0.6184105693383591
+        # "google/bert_uncased_L-12_H-256_A-4": 11,  # 0.6374004994430261
+        # "google/bert_uncased_L-12_H-512_A-8": 10,  # 0.65880012149526
+        # "google/bert_uncased_L-12_H-768_A-12": 9,  # 0.675911357700092
+    }
+)
 
 
 def sent_encode(tokenizer, sent):
@@ -122,25 +129,47 @@ def sent_encode(tokenizer, sent):
     elif isinstance(tokenizer, GPT2Tokenizer):
         # for RoBERTa and GPT-2
         import transformers
+
         if LooseVersion(transformers.__version__) >= LooseVersion("3.0.0"):
             # Uri: truncation=False
             # return tokenizer.encode(sent, add_special_tokens=True, add_prefix_space=True, max_length=tokenizer.max_len, truncation=True)
-            return tokenizer.encode(sent, add_special_tokens=True, add_prefix_space=True, max_length=tokenizer.max_len, truncation='do_not_truncate')
+            return tokenizer.encode(
+                sent,
+                add_special_tokens=True,
+                add_prefix_space=True,
+                max_length=tokenizer.max_len,
+                truncation="do_not_truncate",
+            )
         else:
-            return tokenizer.encode(sent, add_special_tokens=True, add_prefix_space=True, max_length=tokenizer.max_len)
+            return tokenizer.encode(
+                sent,
+                add_special_tokens=True,
+                add_prefix_space=True,
+                max_length=tokenizer.max_len,
+            )
     else:
         import transformers
+
         if LooseVersion(transformers.__version__) >= LooseVersion("3.0.0"):
             # return tokenizer.encode(sent, add_special_tokens=True, max_length=tokenizer.model_max_length, truncation=True)
             # Uri: truncation=False
-            return tokenizer.encode(sent, add_special_tokens=True, max_length=tokenizer.model_max_length, truncation='do_not_truncate')
+            return tokenizer.encode(
+                sent,
+                add_special_tokens=True,
+                max_length=tokenizer.model_max_length,
+                truncation="do_not_truncate",
+            )
         else:
-            return tokenizer.encode(sent, add_special_tokens=True, max_length=tokenizer.model_max_length)
+            return tokenizer.encode(
+                sent, add_special_tokens=True, max_length=tokenizer.model_max_length
+            )
 
 
 def get_model(model_type, num_layers, all_layers=None):
     if model_type.startswith("scibert"):
         model = AutoModel.from_pretrained(cache_scibert(model_type))
+    elif "bigcode" in model_type:
+        model = AutoModel.from_pretrained(model_type, use_auth_token=True)
     else:
         model = AutoModel.from_pretrained(model_type)
     model.eval()
@@ -156,7 +185,9 @@ def get_model(model_type, num_layers, all_layers=None):
             assert (
                 0 <= num_layers <= len(model.layer)
             ), f"Invalid num_layers: num_layers should be between 0 and {len(model.layer)} for {model_type}"
-            model.layer = torch.nn.ModuleList([layer for layer in model.layer[:num_layers]])
+            model.layer = torch.nn.ModuleList(
+                [layer for layer in model.layer[:num_layers]]
+            )
         elif hasattr(model, "encoder"):  # albert
             if hasattr(model.encoder, "albert_layer_groups"):
                 assert (
@@ -167,12 +198,16 @@ def get_model(model_type, num_layers, all_layers=None):
                 assert (
                     0 <= num_layers <= len(model.encoder.layer)
                 ), f"Invalid num_layers: num_layers should be between 0 and {len(model.encoder.layer)} for {model_type}"
-                model.encoder.layer = torch.nn.ModuleList([layer for layer in model.encoder.layer[:num_layers]])
+                model.encoder.layer = torch.nn.ModuleList(
+                    [layer for layer in model.encoder.layer[:num_layers]]
+                )
         elif hasattr(model, "transformer"):  # bert, roberta
             assert (
                 0 <= num_layers <= len(model.transformer.layer)
             ), f"Invalid num_layers: num_layers should be between 0 and {len(model.transformer.layer)} for {model_type}"
-            model.transformer.layer = torch.nn.ModuleList([layer for layer in model.transformer.layer[:num_layers]])
+            model.transformer.layer = torch.nn.ModuleList(
+                [layer for layer in model.transformer.layer[:num_layers]]
+            )
         else:
             raise ValueError("Not supported")
     else:
@@ -199,18 +234,33 @@ def padding(arr, pad_token, dtype=torch.long):
     return padded, lens, mask
 
 
-def bert_encode(model, x, attention_mask, tokenizer, all_layers=False, chunk_overlap=0.5):
+def bert_encode(
+    model, x, attention_mask, tokenizer, all_layers=False, chunk_overlap=0.5
+):
     model.eval()
     with torch.no_grad():
-        model_max_length = tokenizer.max_len if isinstance(tokenizer, GPT2Tokenizer) else tokenizer.model_max_length
-        window_indices = get_window_indices(total_seq_length=x.shape[-1], encoder_max_length=model_max_length, chunk_overlap=chunk_overlap)
+        model_max_length = (
+            tokenizer.max_len
+            if isinstance(tokenizer, GPT2Tokenizer)
+            else tokenizer.model_max_length
+        )
+        window_indices = get_window_indices(
+            total_seq_length=x.shape[-1],
+            encoder_max_length=model_max_length,
+            chunk_overlap=chunk_overlap,
+        )
 
         chunk_output = []
-        for context_start_ind, context_end_ind, update_start_ind, update_end_ind in window_indices:
+        for (
+            context_start_ind,
+            context_end_ind,
+            update_start_ind,
+            update_end_ind,
+        ) in window_indices:
             chunk = x[:, context_start_ind:context_end_ind]
             chunk_attention_mask = attention_mask[:, context_start_ind:context_end_ind]
             out = model(chunk, attention_mask=chunk_attention_mask)
-            
+
             if all_layers:
                 emb = torch.stack(out[-1], dim=2)
             else:
@@ -218,9 +268,10 @@ def bert_encode(model, x, attention_mask, tokenizer, all_layers=False, chunk_ove
             emb = emb[:, update_start_ind:update_end_ind]
             chunk_output.append(emb)
 
-    emb = torch.cat(chunk_output, dim=1)            
+    emb = torch.cat(chunk_output, dim=1)
 
     return emb
+
 
 def get_window_indices(total_seq_length, encoder_max_length, chunk_overlap):
     # Copied from SLED (Ivgy et al., 2022)
@@ -237,24 +288,33 @@ def get_window_indices(total_seq_length, encoder_max_length, chunk_overlap):
         context_end = encoder_max_length
         update_end_ind = context_end - window_margin
         # first window always should update from the beginning
-        results.append((context_start, context_end, update_start_ind, update_end_ind))  
+        results.append((context_start, context_end, update_start_ind, update_end_ind))
 
         while context_end < total_seq_length:
             context_end = min(total_seq_length, context_end + stride)
             context_start = (
-                context_start + stride if context_end < total_seq_length else total_seq_length - encoder_max_length
+                context_start + stride
+                if context_end < total_seq_length
+                else total_seq_length - encoder_max_length
             )
             update_start_ind = max(update_start_ind + stride, update_end_ind)
             # last window always should update until the end
             update_end_ind = (
-                min(total_seq_length, update_end_ind + stride) if context_end < total_seq_length else total_seq_length
+                min(total_seq_length, update_end_ind + stride)
+                if context_end < total_seq_length
+                else total_seq_length
             )
 
-            cs, ce, us, ue = context_start, context_end, update_start_ind - context_start, \
-                                update_end_ind - context_start
+            cs, ce, us, ue = (
+                context_start,
+                context_end,
+                update_start_ind - context_start,
+                update_end_ind - context_start,
+            )
 
             results.append((cs, ce, us, ue))
         return results
+
 
 def process(a, tokenizer=None):
     if tokenizer is not None:
@@ -281,7 +341,9 @@ def get_idf_dict(arr, tokenizer, nthreads=4):
         idf_count.update(chain.from_iterable(p.map(process_partial, arr)))
 
     idf_dict = defaultdict(lambda: log((num_docs + 1) / (1)))
-    idf_dict.update({idx: log((num_docs + 1) / (c + 1)) for (idx, c) in idf_count.items()})
+    idf_dict.update(
+        {idx: log((num_docs + 1) / (c + 1)) for (idx, c) in idf_count.items()}
+    )
     return idf_dict
 
 
@@ -316,7 +378,16 @@ def collate_idf(arr, tokenizer, idf_dict, device="cuda:0"):
     return padded, padded_idf, lens, mask
 
 
-def get_bert_embedding(all_sens, model, tokenizer, idf_dict, batch_size=-1, device="cuda:0", all_layers=False, chunk_overlap=0.5):
+def get_bert_embedding(
+    all_sens,
+    model,
+    tokenizer,
+    idf_dict,
+    batch_size=-1,
+    device="cuda:0",
+    all_layers=False,
+    chunk_overlap=0.5,
+):
     """
     Compute BERT embedding in batches.
 
@@ -329,7 +400,9 @@ def get_bert_embedding(all_sens, model, tokenizer, idf_dict, batch_size=-1, devi
         - :param: `device` (str): device to use, e.g. 'cpu' or 'cuda'
     """
 
-    padded_sens, padded_idf, lens, mask = collate_idf(all_sens, tokenizer, idf_dict, device=device)
+    padded_sens, padded_idf, lens, mask = collate_idf(
+        all_sens, tokenizer, idf_dict, device=device
+    )
 
     if batch_size == -1:
         batch_size = len(all_sens)
@@ -338,7 +411,10 @@ def get_bert_embedding(all_sens, model, tokenizer, idf_dict, batch_size=-1, devi
     with torch.no_grad():
         for i in range(0, len(all_sens), batch_size):
             batch_embedding = bert_encode(
-                model, padded_sens[i : i + batch_size], attention_mask=mask[i : i + batch_size], all_layers=all_layers,
+                model,
+                padded_sens[i : i + batch_size],
+                attention_mask=mask[i : i + batch_size],
+                all_layers=all_layers,
                 tokenizer=tokenizer,
                 chunk_overlap=chunk_overlap,
             )
@@ -350,7 +426,15 @@ def get_bert_embedding(all_sens, model, tokenizer, idf_dict, batch_size=-1, devi
     return total_embedding, mask, padded_idf
 
 
-def greedy_cos_idf(ref_embedding, ref_masks, ref_idf, hyp_embedding, hyp_masks, hyp_idf, all_layers=False):
+def greedy_cos_idf(
+    ref_embedding,
+    ref_masks,
+    ref_idf,
+    hyp_embedding,
+    hyp_masks,
+    hyp_idf,
+    all_layers=False,
+):
     """
     Compute greedy matching based on cosine similarity.
 
@@ -377,8 +461,18 @@ def greedy_cos_idf(ref_embedding, ref_masks, ref_idf, hyp_embedding, hyp_masks, 
 
     if all_layers:
         B, _, L, D = hyp_embedding.size()
-        hyp_embedding = hyp_embedding.transpose(1, 2).transpose(0, 1).contiguous().view(L * B, hyp_embedding.size(1), D)
-        ref_embedding = ref_embedding.transpose(1, 2).transpose(0, 1).contiguous().view(L * B, ref_embedding.size(1), D)
+        hyp_embedding = (
+            hyp_embedding.transpose(1, 2)
+            .transpose(0, 1)
+            .contiguous()
+            .view(L * B, hyp_embedding.size(1), D)
+        )
+        ref_embedding = (
+            ref_embedding.transpose(1, 2)
+            .transpose(0, 1)
+            .contiguous()
+            .view(L * B, ref_embedding.size(1), D)
+        )
     batch_size = ref_embedding.size(0)
     sim = torch.bmm(hyp_embedding, ref_embedding.transpose(1, 2))
     masks = torch.bmm(hyp_masks.unsqueeze(2).float(), ref_masks.unsqueeze(1).float())
@@ -398,8 +492,15 @@ def greedy_cos_idf(ref_embedding, ref_masks, ref_idf, hyp_embedding, hyp_masks, 
     precision_scale = hyp_idf.to(word_precision.device)
     recall_scale = ref_idf.to(word_recall.device)
     if all_layers:
-        precision_scale = precision_scale.unsqueeze(0).expand(L, B, -1).contiguous().view_as(word_precision)
-        recall_scale = recall_scale.unsqueeze(0).expand(L, B, -1).contiguous().view_as(word_recall)
+        precision_scale = (
+            precision_scale.unsqueeze(0)
+            .expand(L, B, -1)
+            .contiguous()
+            .view_as(word_precision)
+        )
+        recall_scale = (
+            recall_scale.unsqueeze(0).expand(L, B, -1).contiguous().view_as(word_recall)
+        )
     P = (word_precision * precision_scale).sum(dim=1)
     R = (word_recall * recall_scale).sum(dim=1)
     F = 2 * P * R / (P + R)
@@ -417,12 +518,18 @@ def greedy_cos_idf(ref_embedding, ref_masks, ref_idf, hyp_embedding, hyp_masks, 
         F3 = F3.view(L, B)
 
     if torch.any(hyp_zero_mask):
-        print("Warning: Empty candidate sentence detected; setting precision and recall to be 0.", file=sys.stderr)
+        print(
+            "Warning: Empty candidate sentence detected; setting precision and recall to be 0.",
+            file=sys.stderr,
+        )
         P = P.masked_fill(hyp_zero_mask, 0.0)
         R = R.masked_fill(hyp_zero_mask, 0.0)
 
     if torch.any(ref_zero_mask):
-        print("Warning: Empty reference sentence detected; setting precision and recall to be 0.", file=sys.stderr)
+        print(
+            "Warning: Empty reference sentence detected; setting precision and recall to be 0.",
+            file=sys.stderr,
+        )
         P = P.masked_fill(ref_zero_mask, 0.0)
         R = R.masked_fill(ref_zero_mask, 0.0)
 
@@ -433,8 +540,18 @@ def greedy_cos_idf(ref_embedding, ref_masks, ref_idf, hyp_embedding, hyp_masks, 
 
 
 def bert_cos_score_idf(
-    model, refs, hyps, tokenizer, idf_dict, verbose=False, batch_size=64, device="cuda:0", all_layers=False, 
-    no_punc=False, sources=None, chunk_overlap=0.5
+    model,
+    refs,
+    hyps,
+    tokenizer,
+    idf_dict,
+    verbose=False,
+    batch_size=64,
+    device="cuda:0",
+    all_layers=False,
+    no_punc=False,
+    sources=None,
+    chunk_overlap=0.5,
 ):
     """
     Compute BERTScore.
@@ -455,19 +572,21 @@ def bert_cos_score_idf(
     hyps = [h.strip() for h in hyps]
 
     if sources is None:
+
         def dedup_and_sort(l):
             return sorted(list(set(l)), key=lambda x: len(x.split(" ")), reverse=True)
+
     else:
         assert len(hyps) == len(sources)
         assert len(refs) == len(sources)
-        sources = [f'{s.strip()} \n' for s in sources]
-        hyps = [f'{s}{h}'.strip() for s,h in zip(sources, hyps)]
-        refs = [f'{s}{r}'.strip() for s,r in zip(sources, refs)]
+        sources = [f"{s.strip()} \n" for s in sources]
+        hyps = [f"{s}{h}".strip() for s, h in zip(sources, hyps)]
+        refs = [f"{s}{r}".strip() for s, r in zip(sources, refs)]
 
         # we need to do this because later we do:
         # sentences = dedup_and_sort(refs + hyps)
         sources_to_trim = sources * 2
-        
+
         # don't dedup and don't sort, so we will be able to mask the sources later
         dedup_and_sort = lambda l: l
 
@@ -479,10 +598,17 @@ def bert_cos_score_idf(
         iter_range = tqdm(iter_range)
     stats_dict = dict()
     for batch_start in iter_range:
-        sen_batch = [sen.strip() for sen in sentences[batch_start : batch_start + batch_size]]
+        sen_batch = [
+            sen.strip() for sen in sentences[batch_start : batch_start + batch_size]
+        ]
         embs, masks, padded_idf = get_bert_embedding(
-            sen_batch, model, tokenizer, idf_dict, device=device, all_layers=all_layers,
-            chunk_overlap=chunk_overlap
+            sen_batch,
+            model,
+            tokenizer,
+            idf_dict,
+            device=device,
+            all_layers=all_layers,
+            chunk_overlap=chunk_overlap,
         )
         embs = embs.cpu()
         masks = masks.cpu()
@@ -491,13 +617,17 @@ def bert_cos_score_idf(
             sequence_len = masks[i].sum().item()
             emb = embs[i, :sequence_len]
             idf = padded_idf[i, :sequence_len]
-            tokens = tokenizer.convert_ids_to_tokens(tokenizer(sen)['input_ids'])
+            tokens = tokenizer.convert_ids_to_tokens(tokenizer(sen)["input_ids"])
             if sources is not None:
                 sources_batch = sources_to_trim[batch_start : batch_start + batch_size]
                 src = sources_batch[i]
                 source_length = 0
                 for j in range(len(tokens)):
-                    if src.startswith(tokenizer.decode(tokenizer.convert_tokens_to_ids(tokens[:j])).removeprefix(tokenizer.bos_token)):
+                    if src.startswith(
+                        tokenizer.decode(
+                            tokenizer.convert_tokens_to_ids(tokens[:j])
+                        ).removeprefix(tokenizer.bos_token)
+                    ):
                         source_length = j
                     else:
                         break
@@ -549,22 +679,26 @@ def bert_cos_score_idf(
     preds = torch.cat(preds, dim=1 if all_layers else 0)
     return preds
 
+
 def mark_all_punc_tokens(tokens):
-    whitespace_token='\u0120'
-    newline_token = '\u010a'
-    tab_token = '\u0109'
+    whitespace_token = "\u0120"
+    newline_token = "\u010a"
+    tab_token = "\u0109"
 
     def all_punc(tok):
-        return all(c in (set(string.punctuation) - set('+-*/&|~')) for c in tok)
+        return all(c in (set(string.punctuation) - set("+-*/&|~")) for c in tok)
 
     def strip_whitespace(tok):
         return tok.strip(whitespace_token + newline_token + tab_token)
 
     return torch.tensor([not all_punc(strip_whitespace(tok)) for tok in tokens])
 
+
 def get_hash(model, num_layers, idf, rescale_with_baseline, use_custom_baseline):
     msg = "{}_L{}{}".format(
-        model, num_layers, "_idf" if idf else "_no-idf",
+        model,
+        num_layers,
+        "_idf" if idf else "_no-idf",
     )
     if rescale_with_baseline:
         if use_custom_baseline:
@@ -586,9 +720,7 @@ def cache_scibert(model_type, cache_folder="~/.cache/torch/transformers"):
     if not os.path.exists(filename):
         cmd = f"mkdir -p {cache_folder}; cd {cache_folder};"
         cmd += f"wget {SCIBERT_URL_DICT[model_type]}; tar -xvf {underscore_model_type}.tar;"
-        cmd += (
-            f"rm -f {underscore_model_type}.tar ; cd {underscore_model_type}; tar -zxvf weights.tar.gz; mv weights/* .;"
-        )
+        cmd += f"rm -f {underscore_model_type}.tar ; cd {underscore_model_type}; tar -zxvf weights.tar.gz; mv weights/* .;"
         cmd += f"rm -f weights.tar.gz; rmdir weights; mv bert_config.json config.json;"
         print(cmd)
         print(f"downloading {model_type} model")
@@ -612,7 +744,8 @@ def cache_scibert(model_type, cache_folder="~/.cache/torch/transformers"):
         json_file = os.path.join(filename, "tokenizer_config.json")
         if not os.path.exists(json_file):
             with open(json_file, "w") as f:
-                print('{"do_lower_case": true, "max_len": 512, "init_inputs": []}', file=f)
+                print(
+                    '{"do_lower_case": true, "max_len": 512, "init_inputs": []}', file=f
+                )
 
     return filename
-
